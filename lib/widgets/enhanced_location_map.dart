@@ -336,6 +336,49 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
     );
   }
 
+  // Generate a consistent color for each polygon based on building ID
+  Color _getPolygonColor(String buildingId) {
+    // Use hash code to generate a consistent color
+    final hash = buildingId.hashCode;
+    
+    // Define a palette of distinct, vibrant colors
+    final colors = [
+      const Color(0xFFE91E63), // Pink
+      const Color(0xFF9C27B0), // Purple
+      const Color(0xFF673AB7), // Deep Purple
+      const Color(0xFF3F51B5), // Indigo
+      const Color(0xFF2196F3), // Blue
+      const Color(0xFF00BCD4), // Cyan
+      const Color(0xFF009688), // Teal
+      const Color(0xFF4CAF50), // Green
+      const Color(0xFF8BC34A), // Light Green
+      const Color(0xFFCDDC39), // Lime
+      const Color(0xFFFFEB3B), // Yellow
+      const Color(0xFFFFC107), // Amber
+      const Color(0xFFFF9800), // Orange
+      const Color(0xFFFF5722), // Deep Orange
+      const Color(0xFFF44336), // Red
+    ];
+    
+    // Select color based on hash
+    return colors[hash.abs() % colors.length];
+  }
+  
+  // Calculate center point of a polygon for label placement
+  LatLng _getPolygonCenter(List<LatLng> points) {
+    if (points.isEmpty) return const LatLng(0, 0);
+    
+    double sumLat = 0;
+    double sumLon = 0;
+    
+    for (var point in points) {
+      sumLat += point.latitude;
+      sumLon += point.longitude;
+    }
+    
+    return LatLng(sumLat / points.length, sumLon / points.length);
+  }
+
   List<Polygon> _buildPolygonOverlays() {
     print('Building ${_cachedPolygons.length} polygon overlays...');
     if (_cachedPolygons.isNotEmpty) {
@@ -362,16 +405,19 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
         // Determine if this polygon is selected
         final isSelected = _selectedPolygon?.buildingId == buildingPolygon.buildingId;
         
+        // Generate a unique color for each polygon based on building ID
+        final polygonColor = _getPolygonColor(buildingPolygon.buildingId);
+        
         print('Polygon ${buildingPolygon.buildingId}: ${points.length} points, first point: ${points.isNotEmpty ? points[0] : "none"}');
         
         return Polygon(
           points: points,
           color: isSelected 
               ? Colors.blue.withOpacity(0.4)
-              : Colors.transparent,  // Transparent fill, only border visible
+              : polygonColor.withOpacity(0.3),  // Semi-transparent fill with unique color
           borderColor: isSelected 
               ? Colors.blue
-              : Colors.white,  // White border for better visibility on satellite
+              : polygonColor,  // Colored border matching the fill
           borderStrokeWidth: isSelected ? 4.0 : 2.5,
           isFilled: true,
         );
@@ -381,6 +427,73 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
         return null;
       }
     }).whereType<Polygon>().toList();
+  }
+  
+  // Build text labels for polygons showing business names
+  List<Marker> _buildPolygonLabels() {
+    return _cachedPolygons.map((buildingPolygon) {
+      try {
+        // Parse geometry JSON
+        final geometryJson = jsonDecode(buildingPolygon.geometry);
+        final rings = geometryJson['rings'] as List;
+        
+        if (rings.isEmpty) return null;
+        
+        // Convert first ring to LatLng points
+        final ring = rings[0] as List;
+        final points = ring.map((coord) {
+          final lat = (coord[1] is int) ? (coord[1] as int).toDouble() : coord[1] as double;
+          final lon = (coord[0] is int) ? (coord[0] as int).toDouble() : coord[0] as double;
+          return LatLng(lat, lon);
+        }).toList();
+        
+        // Calculate center point for label
+        final center = _getPolygonCenter(points);
+        
+        // Get business name from attributes (fallback to building ID if not available)
+        final businessName = buildingPolygon.businessName ?? buildingPolygon.buildingId;
+        
+        // Get polygon color for label background
+        final polygonColor = _getPolygonColor(buildingPolygon.buildingId);
+        
+        return Marker(
+          point: center,
+          width: 150,
+          height: 40,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: polygonColor.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.white, width: 1),
+            ),
+            child: Center(
+              child: Text(
+                businessName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                      color: Colors.black,
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ),
+          ),
+        );
+      } catch (e) {
+        print('Error building polygon label for ${buildingPolygon.buildingId}: $e');
+        return null;
+      }
+    }).whereType<Marker>().toList();
   }
 
   @override
@@ -477,6 +590,10 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
                     // Polygon overlays
                     PolygonLayer(
                       polygons: _buildPolygonOverlays(),
+                    ),
+                    // Polygon labels
+                    MarkerLayer(
+                      markers: _buildPolygonLabels(),
                     ),
                     // Selected location marker
                     if (_selectedLocation != null && _selectedPolygon == null)
