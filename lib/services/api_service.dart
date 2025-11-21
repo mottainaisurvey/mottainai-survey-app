@@ -134,6 +134,10 @@ class ApiService {
             'user_id': pickup.userId,
             'latitude': pickup.latitude,
             'longitude': pickup.longitude,
+            'company_id': pickup.companyId,
+            'company_name': pickup.companyName,
+            'lot_code': pickup.lotCode,
+            'lot_name': pickup.lotName,
           }
         }
       };

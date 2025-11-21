@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -50,7 +50,11 @@ class DatabaseHelper {
       latitude REAL,
       longitude REAL,
       synced INTEGER NOT NULL DEFAULT 0,
-      createdAt $textType
+      createdAt $textType,
+      companyId $textNullable,
+      companyName $textNullable,
+      lotCode $textNullable,
+      lotName $textNullable
     )
     ''');
 
@@ -77,6 +81,19 @@ class DatabaseHelper {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 5) {
+      // Add company fields to pickups table
+      const textNullable = 'TEXT';
+      try {
+        await db.execute('ALTER TABLE pickups ADD COLUMN companyId $textNullable');
+        await db.execute('ALTER TABLE pickups ADD COLUMN companyName $textNullable');
+        await db.execute('ALTER TABLE pickups ADD COLUMN lotCode $textNullable');
+        await db.execute('ALTER TABLE pickups ADD COLUMN lotName $textNullable');
+      } catch (e) {
+        print('Error adding company columns: $e');
+      }
+    }
+    
     if (oldVersion < 3) {
       // Add polygon cache table
       const textType = 'TEXT NOT NULL';

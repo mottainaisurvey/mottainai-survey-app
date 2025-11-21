@@ -16,6 +16,10 @@ class PickupSubmission {
   final double? longitude;
   final int synced;
   final String createdAt;
+  final String? companyId;
+  final String? companyName;
+  final String? lotCode;
+  final String? lotName;
 
   PickupSubmission({
     this.id,
@@ -35,6 +39,10 @@ class PickupSubmission {
     this.longitude,
     this.synced = 0,
     required this.createdAt,
+    this.companyId,
+    this.companyName,
+    this.lotCode,
+    this.lotName,
   });
 
   Map<String, dynamic> toMap() {
@@ -56,6 +64,10 @@ class PickupSubmission {
       'longitude': longitude,
       'synced': synced,
       'createdAt': createdAt,
+      'companyId': companyId,
+      'companyName': companyName,
+      'lotCode': lotCode,
+      'lotName': lotName,
     };
   }
 
@@ -75,6 +87,10 @@ class PickupSubmission {
       'userId': userId,
       'latitude': latitude,
       'longitude': longitude,
+      'companyId': companyId,
+      'companyName': companyName,
+      'lotCode': lotCode,
+      'lotName': lotName,
     };
   }
 
@@ -97,6 +113,10 @@ class PickupSubmission {
       longitude: map['longitude'] as double?,
       synced: map['synced'] as int? ?? 0,
       createdAt: map['createdAt'] as String,
+      companyId: map['companyId'] as String?,
+      companyName: map['companyName'] as String?,
+      lotCode: map['lotCode'] as String?,
+      lotName: map['lotName'] as String?,
     );
   }
 
@@ -118,6 +138,10 @@ class PickupSubmission {
     double? longitude,
     int? synced,
     String? createdAt,
+    String? companyId,
+    String? companyName,
+    String? lotCode,
+    String? lotName,
   }) {
     return PickupSubmission(
       id: id ?? this.id,
@@ -137,6 +161,10 @@ class PickupSubmission {
       longitude: longitude ?? this.longitude,
       synced: synced ?? this.synced,
       createdAt: createdAt ?? this.createdAt,
+      companyId: companyId ?? this.companyId,
+      companyName: companyName ?? this.companyName,
+      lotCode: lotCode ?? this.lotCode,
+      lotName: lotName ?? this.lotName,
     );
   }
 }

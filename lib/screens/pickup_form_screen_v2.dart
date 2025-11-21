@@ -357,6 +357,10 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
         latitude: _latitude,
         longitude: _longitude,
         createdAt: DateTime.now().toIso8601String(),
+        companyId: _selectedCompany?.companyId,
+        companyName: _selectedCompany?.companyName,
+        lotCode: _selectedLot?.lotCode,
+        lotName: _selectedLot?.lotName,
       );
 
       // Save to local database
