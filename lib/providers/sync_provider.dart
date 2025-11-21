@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../database/database_helper.dart';
 import '../services/api_service.dart';
 import '../models/pickup_submission.dart';
+import '../models/user.dart';
 
 class SyncProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -97,11 +100,25 @@ class SyncProvider with ChangeNotifier {
             continue;
           }
 
+          // Get user info from storage
+          final prefs = await SharedPreferences.getInstance();
+          final userJson = prefs.getString('user');
+          String userFullName = 'Unknown';
+          String userPhoneNumber = '';
+          
+          if (userJson != null) {
+            final user = User.fromJson(json.decode(userJson));
+            userFullName = user.fullName;
+            userPhoneNumber = user.phone;
+          }
+
           // Submit to server
           final result = await _apiService.submitPickup(
             pickup,
             firstPhoto,
             secondPhoto,
+            userFullName,
+            userPhoneNumber,
           );
 
           if (result['success']) {

@@ -101,11 +101,14 @@ class ApiService {
     PickupSubmission pickup,
     File firstPhotoFile,
     File secondPhotoFile,
+    String userFullName,
+    String userPhoneNumber,
   ) async {
     try {
+      // Use /survey endpoint with correct data format
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/forms/submit'),
+        Uri.parse('$baseUrl/survey'),
       );
 
       // Add authorization header
@@ -113,21 +116,30 @@ class ApiService {
         request.headers['Authorization'] = _token!;
       }
 
-      // Add form fields
-      request.fields['formId'] = pickup.formId;
-      request.fields['supervisorId'] = pickup.supervisorId;
-      request.fields['customerType'] = pickup.customerType;
-      request.fields['binType'] = pickup.binType;
-      if (pickup.wheelieBinType != null) {
-        request.fields['wheelieBinType'] = pickup.wheelieBinType!;
-      }
-      request.fields['binQuantity'] = pickup.binQuantity.toString();
-      request.fields['buildingId'] = pickup.buildingId;
-      request.fields['pickUpDate'] = pickup.pickUpDate;
-      if (pickup.incidentReport != null) {
-        request.fields['incidentReport'] = pickup.incidentReport!;
-      }
-      request.fields['userId'] = pickup.userId;
+      // Map to backend expected format
+      final surveyData = {
+        'feature': {
+          'attributes': {
+            'building_id': pickup.buildingId,
+            'customer_type': pickup.customerType,
+            'full_name': userFullName,
+            'phone_number': userPhoneNumber,
+            'bin_qty_per_pickup': pickup.binQuantity,
+            'bin_type': pickup.binType,
+            'pickup_date': pickup.pickUpDate,
+            'form_id': pickup.formId,
+            'supervisor_id': pickup.supervisorId,
+            'wheelie_bin_type': pickup.wheelieBinType,
+            'incident_report': pickup.incidentReport,
+            'user_id': pickup.userId,
+            'latitude': pickup.latitude,
+            'longitude': pickup.longitude,
+          }
+        }
+      };
+
+      // Send as JSON body
+      request.fields['data'] = json.encode(surveyData);
 
       // Add photo files
       request.files.add(await http.MultipartFile.fromPath(
