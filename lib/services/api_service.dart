@@ -39,7 +39,7 @@ class ApiService {
       final encodedPassword = base64.encode(utf8.encode(password));
       
       final response = await http.post(
-        Uri.parse('$baseUrl/api/mobile/users/login'),
+        Uri.parse('$baseUrl/users/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
