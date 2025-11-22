@@ -27,6 +27,22 @@ class SyncProvider with ChangeNotifier {
   SyncProvider() {
     _initConnectivityListener();
     _loadUnsyncedCount();
+    _loadTokenFromStorage();
+  }
+
+  Future<void> _loadTokenFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token != null) {
+        _apiService.setToken(token);
+        print('[SyncProvider] Token loaded from storage');
+      } else {
+        print('[SyncProvider] No token found in storage');
+      }
+    } catch (e) {
+      print('[SyncProvider] Error loading token: $e');
+    }
   }
 
   void _initConnectivityListener() {
@@ -100,8 +116,11 @@ class SyncProvider with ChangeNotifier {
             continue;
           }
 
-          // Get user info from storage
-          final prefs = await SharedPreferences.getInstance();
+      // Ensure token is loaded before submitting
+      await _loadTokenFromStorage();
+      
+      // Get user info from storage
+      final prefs = await SharedPreferences.getInstance();
           final userJson = prefs.getString('user');
           String userFullName = 'Unknown';
           String userPhoneNumber = '';
