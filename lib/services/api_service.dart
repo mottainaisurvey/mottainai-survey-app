@@ -7,7 +7,7 @@ import '../models/pickup_submission.dart';
 
 class ApiService {
   // IMPORTANT: Change this to your server's IP address
-  static const String baseUrl = 'http://172.232.24.180:3000';
+  static const String baseUrl = 'http://172.232.24.180:3003';
   
   String? _token;
 
@@ -101,14 +101,11 @@ class ApiService {
     PickupSubmission pickup,
     File firstPhotoFile,
     File secondPhotoFile,
-    String userFullName,
-    String userPhoneNumber,
   ) async {
     try {
-      // Use /survey endpoint with correct data format
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/survey'),
+        Uri.parse('$baseUrl/forms/submit'),
       );
 
       // Add authorization header
@@ -116,34 +113,21 @@ class ApiService {
         request.headers['Authorization'] = _token!;
       }
 
-      // Map to backend expected format
-      final surveyData = {
-        'feature': {
-          'attributes': {
-            'building_id': pickup.buildingId,
-            'customer_type': pickup.customerType,
-            'full_name': userFullName,
-            'phone_number': userPhoneNumber,
-            'bin_qty_per_pickup': pickup.binQuantity,
-            'bin_type': pickup.binType,
-            'pickup_date': pickup.pickUpDate,
-            'form_id': pickup.formId,
-            'supervisor_id': pickup.supervisorId,
-            'wheelie_bin_type': pickup.wheelieBinType,
-            'incident_report': pickup.incidentReport,
-            'user_id': pickup.userId,
-            'latitude': pickup.latitude,
-            'longitude': pickup.longitude,
-            'company_id': pickup.companyId,
-            'company_name': pickup.companyName,
-            'lot_code': pickup.lotCode,
-            'lot_name': pickup.lotName,
-          }
-        }
-      };
-
-      // Send as JSON body
-      request.fields['data'] = json.encode(surveyData);
+      // Add form fields
+      request.fields['formId'] = pickup.formId;
+      request.fields['supervisorId'] = pickup.supervisorId;
+      request.fields['customerType'] = pickup.customerType;
+      request.fields['binType'] = pickup.binType;
+      if (pickup.wheelieBinType != null) {
+        request.fields['wheelieBinType'] = pickup.wheelieBinType!;
+      }
+      request.fields['binQuantity'] = pickup.binQuantity.toString();
+      request.fields['buildingId'] = pickup.buildingId;
+      request.fields['pickUpDate'] = pickup.pickUpDate;
+      if (pickup.incidentReport != null) {
+        request.fields['incidentReport'] = pickup.incidentReport!;
+      }
+      request.fields['userId'] = pickup.userId;
 
       // Add photo files
       request.files.add(await http.MultipartFile.fromPath(
