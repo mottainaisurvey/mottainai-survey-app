@@ -73,8 +73,15 @@ class SyncProvider with ChangeNotifier {
     await _loadUnsyncedCount();
   }
 
-  Future<bool> syncPendingPickups() async {
-    if (_isSyncing) return false;
+  Future<void> syncPendingPickups() async {
+    if (_isSyncing) return;
+
+    // Check for inactivity timeout
+    if (_apiService.isInactive()) {
+      _lastSyncError = 'Session expired due to inactivity. Please log in again.';
+      notifyListeners();
+      return;
+    }
 
     _isSyncing = true;
     _lastSyncError = null;

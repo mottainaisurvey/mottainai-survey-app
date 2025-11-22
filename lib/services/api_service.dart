@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../models/pickup_submission.dart';
 
@@ -10,9 +11,32 @@ class ApiService {
   static const String baseUrl = 'http://172.232.24.180:3003';
   
   String? _token;
+  DateTime? _lastActivityTime;
+  static const Duration inactivityTimeout = Duration(minutes: 20);
 
   void setToken(String token) {
     _token = token;
+    _updateActivity();
+  }
+
+  void _updateActivity() {
+    _lastActivityTime = DateTime.now();
+  }
+
+  bool isInactive() {
+    if (_lastActivityTime == null) return false;
+    return DateTime.now().difference(_lastActivityTime!) > inactivityTimeout;
+  }
+
+  Future<void> _handleTokenRefresh(http.Response response) async {
+    final newToken = response.headers['x-new-token'];
+    if (newToken != null && newToken.isNotEmpty) {
+      print('[ApiService] Token refreshed by server');
+      _token = newToken;
+      // Save new token to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', newToken);
+    }
   }
 
   String? getToken() {
@@ -144,6 +168,12 @@ class ApiService {
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+
+      // Update activity timestamp
+      _updateActivity();
+
+      // Check for token refresh
+      await _handleTokenRefresh(response);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {
