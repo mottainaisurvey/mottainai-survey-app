@@ -57,6 +57,10 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
   String _customerType = 'Residential';
   final List<String> _customerTypes = ['Residential', 'Business'];
   
+  // Socio-Economic Class (for Residential customers only)
+  String _socioClass = 'medium';
+  final List<String> _socioClasses = ['low', 'medium', 'high'];
+  
   // Building data from polygon
   String? _customerZone;
   String? _socioEconomicGroup;
@@ -361,6 +365,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
         companyName: _selectedCompany?.companyName,
         lotCode: _selectedLot?.lotCode,
         lotName: _selectedLot?.lotName,
+        socioClass: _customerType == 'Residential' ? _socioClass : null,
       );
 
       // Save to local database
@@ -488,7 +493,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                       DropdownButtonFormField<Company>(
                         value: _selectedCompany,
                         decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                           labelText: 'Company *',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -519,7 +524,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                     DropdownButtonFormField<OperationalLot>(
                       value: _selectedLot,
                       decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         labelText: 'Operational Lot *',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -569,7 +574,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
             TextFormField(
               controller: _supervisorIdController,
               decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                 labelText: 'Supervisor ID *',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -647,7 +652,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                     TextFormField(
                       controller: _buildingIdController,
                       decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         labelText: 'Building ID *',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -672,7 +677,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                     TextFormField(
                       controller: _businessNameController,
                       decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         labelText: 'Business Name',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -686,7 +691,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                     TextFormField(
                       controller: _customerPhoneController,
                       decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         labelText: 'Customer Phone',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -701,7 +706,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                     TextFormField(
                       controller: _customerEmailController,
                       decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         labelText: 'Customer Email',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -716,7 +721,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                     TextFormField(
                       controller: _customerAddressController,
                       decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                         labelText: 'Customer Address',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -821,12 +826,45 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
               }).toList(),
             ),
             const SizedBox(height: 16),
+            
+            // Socio-Economic Class (only for Residential customers)
+            if (_customerType == 'Residential')
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Socio-Economic Class *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: _socioClasses.map((socioClass) {
+                      return Expanded(
+                        child: RadioListTile<String>(
+                          title: Text(socioClass.toUpperCase()),
+                          value: socioClass,
+                          groupValue: _socioClass,
+                          onChanged: (value) {
+                            setState(() {
+                              _socioClass = value!;
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
 
             // Bin Type
             DropdownButtonFormField<String>(
               value: _binType,
               decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                 labelText: 'Bin Type *',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -854,7 +892,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
                   DropdownButtonFormField<String>(
                     value: _wheelieBinType,
                     decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                       labelText: 'Wheelie Bin Type',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -881,7 +919,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
             TextFormField(
               controller: _binQuantityController,
               decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                 labelText: 'Bin Quantity *',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -906,8 +944,9 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
               title: const Text('Pick-up Date *'),
               subtitle: Text(DateFormat('MMM dd, yyyy').format(_pickUpDate)),
               leading: const Icon(Icons.calendar_today),
-              trailing: const Icon(Icons.edit),
-              onTap: _selectDate,
+              trailing: null,  // Removed edit icon to indicate read-only
+              onTap: null,  // Disabled tap to make it read-only
+              enabled: false,  // Make it visually disabled
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(color: Colors.grey.shade300),
@@ -993,13 +1032,14 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
             TextFormField(
               controller: _incidentReportController,
               decoration: InputDecoration(
-                  labelStyle: const TextStyle(fontSize: 9, color: Color(0xFFD1D5DB)),
+                  labelStyle: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                 labelText: 'Incident Report (Optional)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 prefixIcon: const Icon(Icons.report),
                 hintText: 'Describe any incidents or issues...',
+                hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
               ),
               maxLines: 3,
             ),

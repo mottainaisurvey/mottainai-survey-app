@@ -76,13 +76,6 @@ class SyncProvider with ChangeNotifier {
   Future<void> syncPendingPickups() async {
     if (_isSyncing) return;
 
-    // Check for inactivity timeout
-    if (_apiService.isInactive()) {
-      _lastSyncError = 'Session expired due to inactivity. Please log in again.';
-      notifyListeners();
-      return;
-    }
-
     _isSyncing = true;
     _lastSyncError = null;
     notifyListeners();
@@ -94,7 +87,7 @@ class SyncProvider with ChangeNotifier {
         _lastSyncError = 'No internet connection';
         _isSyncing = false;
         notifyListeners();
-        return false;
+        return;
       }
 
       // Get unsynced pickups
@@ -104,7 +97,7 @@ class SyncProvider with ChangeNotifier {
         _isSyncing = false;
         _lastSyncTime = DateTime.now();
         notifyListeners();
-        return true;
+        return;
       }
 
       int successCount = 0;
@@ -143,8 +136,6 @@ class SyncProvider with ChangeNotifier {
             pickup,
             firstPhoto,
             secondPhoto,
-            userFullName,
-            userPhoneNumber,
           );
 
           if (result['success']) {
@@ -170,12 +161,10 @@ class SyncProvider with ChangeNotifier {
 
       _isSyncing = false;
       notifyListeners();
-      return failCount == 0;
     } catch (e) {
       _lastSyncError = 'Sync failed: $e';
       _isSyncing = false;
       notifyListeners();
-      return false;
     }
   }
 

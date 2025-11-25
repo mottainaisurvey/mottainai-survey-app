@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -70,7 +70,8 @@ class DatabaseHelper {
       geometry $textType,
       centerLat REAL NOT NULL,
       centerLon REAL NOT NULL,
-      lastUpdated INTEGER NOT NULL
+      lastUpdated INTEGER NOT NULL,
+      customerLabels $textNullable
     )
     ''');
 
@@ -81,6 +82,16 @@ class DatabaseHelper {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 6) {
+      // Add customerLabels column to cached_polygons table
+      const textNullable = 'TEXT';
+      try {
+        await db.execute('ALTER TABLE cached_polygons ADD COLUMN customerLabels $textNullable');
+      } catch (e) {
+        print('Error adding customerLabels column: $e');
+      }
+    }
+    
     if (oldVersion < 5) {
       // Add company fields to pickups table
       const textNullable = 'TEXT';

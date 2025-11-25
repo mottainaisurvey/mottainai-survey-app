@@ -13,6 +13,7 @@ class BuildingPolygon {
   final double centerLat;
   final double centerLon;
   final DateTime lastUpdated;
+  final String? customerLabels; // e.g., "R1,R2,B1"
 
   BuildingPolygon({
     required this.buildingId,
@@ -26,6 +27,7 @@ class BuildingPolygon {
     required this.centerLat,
     required this.centerLon,
     required this.lastUpdated,
+    this.customerLabels,
   });
 
   // Convert Web Mercator (EPSG:3857) to WGS84 (EPSG:4326)
@@ -104,6 +106,7 @@ class BuildingPolygon {
       'centerLat': centerLat,
       'centerLon': centerLon,
       'lastUpdated': lastUpdated.millisecondsSinceEpoch,
+      'customerLabels': customerLabels,
     };
   }
 
@@ -121,6 +124,7 @@ class BuildingPolygon {
       centerLat: map['centerLat'] as double,
       centerLon: map['centerLon'] as double,
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated'] as int),
+      customerLabels: map['customerLabels'] as String?,
     );
   }
 }

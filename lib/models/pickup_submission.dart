@@ -20,6 +20,7 @@ class PickupSubmission {
   final String? companyName;
   final String? lotCode;
   final String? lotName;
+  final String? socioClass;
 
   PickupSubmission({
     this.id,
@@ -43,6 +44,7 @@ class PickupSubmission {
     this.companyName,
     this.lotCode,
     this.lotName,
+    this.socioClass,
   });
 
   Map<String, dynamic> toMap() {
@@ -68,6 +70,7 @@ class PickupSubmission {
       'companyName': companyName,
       'lotCode': lotCode,
       'lotName': lotName,
+      'socioClass': socioClass,
     };
   }
 
@@ -91,6 +94,7 @@ class PickupSubmission {
       'companyName': companyName,
       'lotCode': lotCode,
       'lotName': lotName,
+      'socioClass': socioClass,
     };
   }
 
@@ -117,6 +121,7 @@ class PickupSubmission {
       companyName: map['companyName'] as String?,
       lotCode: map['lotCode'] as String?,
       lotName: map['lotName'] as String?,
+      socioClass: map['socioClass'] as String?,
     );
   }
 
@@ -142,6 +147,7 @@ class PickupSubmission {
     String? companyName,
     String? lotCode,
     String? lotName,
+    String? socioClass,
   }) {
     return PickupSubmission(
       id: id ?? this.id,
@@ -165,6 +171,7 @@ class PickupSubmission {
       companyName: companyName ?? this.companyName,
       lotCode: lotCode ?? this.lotCode,
       lotName: lotName ?? this.lotName,
+      socioClass: socioClass ?? this.socioClass,
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart' as loc;
 import '../models/building_polygon.dart';
 import '../services/polygon_cache_service.dart';
+import '../services/api_service.dart';
 import 'building_info_popup.dart';
 
 class EnhancedLocationMap extends StatefulWidget {
@@ -29,16 +30,18 @@ class EnhancedLocationMap extends StatefulWidget {
 class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
   final MapController _mapController = MapController();
   final PolygonCacheService _polygonService = PolygonCacheService();
+  final ApiService _apiService = ApiService();
   
   LatLng? _selectedLocation;
   LatLng? _currentLocation;
-  bool _isLoading = true;
+  bool _isLoading = false;  // Changed to false to remove blocking loader
   bool _isLoadingPolygons = false;
   String? _error;
   
   List<BuildingPolygon> _cachedPolygons = [];
   BuildingPolygon? _selectedPolygon;
   String? _cacheInfo;
+  Map<String, String> _customerLabelsCache = {}; // buildingId -> labels
 
   @override
   void initState() {
@@ -97,7 +100,7 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
       if (_selectedLocation != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            _mapController.move(_selectedLocation!, 17.0);
+            _mapController.move(_selectedLocation!, 19.5);
           }
         });
       }
@@ -130,6 +133,9 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
       setState(() {
         _cachedPolygons = cachedPolygons;
       });
+      
+      // Fetch customer labels for all polygons (non-blocking)
+      _fetchCustomerLabelsForPolygons(cachedPolygons);
       
       print('Loaded ${cachedPolygons.length} cached polygons');
       if (cachedPolygons.isNotEmpty) {
@@ -318,7 +324,141 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
     }
   }
 
-  void _showBuildingInfoPopup(BuildingPolygon polygon) {
+  // Fetch customer labels for all polygons
+  Future<void> _fetchCustomerLabelsForPolygons(List<BuildingPolygon> polygons) async {
+    for (var polygon in polygons) {
+      try {
+        final result = await _apiService.getBuildingCustomers(polygon.buildingId);
+        if (result['success'] == true && result['existingCustomers'] != null) {
+          final customers = result['existingCustomers'] as List;
+          if (customers.isNotEmpty) {
+            final labels = customers.map((c) => c['label'] as String).join(',');
+            setState(() {
+              _customerLabelsCache[polygon.buildingId] = labels;
+            });
+          }
+        }
+      } catch (e) {
+        print('Error fetching customer labels for ${polygon.buildingId}: $e');
+      }
+    }
+  }
+
+  // Direct selection when tapping label - no confirmation
+  void _selectPolygonDirectly(BuildingPolygon polygon) {
+    showDialog(
+      context: context,
+      builder: (context) => BuildingInfoPopup(
+        polygon: polygon,
+        onConfirm: (updatedPolygon) {
+          setState(() {
+            _selectedPolygon = updatedPolygon;
+            _selectedLocation = LatLng(updatedPolygon.centerLat, updatedPolygon.centerLon);
+          });
+          
+          widget.onLocationSelected(updatedPolygon.centerLat, updatedPolygon.centerLon);
+          widget.onBuildingSelected?.call(updatedPolygon);
+        },
+      ),
+    );
+  }
+
+  // Show confirmation dialog when tapping polygon (not label)
+  void _showBuildingInfoPopup(BuildingPolygon polygon) async {
+    // Check if building has existing customers
+    try {
+      final result = await _apiService.checkBuilding(polygon.buildingId);
+      
+      if (result['success'] == true && result['hasCustomers'] == true) {
+        // Show duplicate detection dialog
+        final existingCustomers = result['existingCustomers'] as List;
+        final customerCount = result['customerCount'] as int;
+        
+        final shouldContinue = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Existing Customers Found'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'This building already has $customerCount customer(s):',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                ...existingCustomers.map((customer) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: customer['label'].toString().startsWith('R') 
+                              ? Colors.blue 
+                              : Colors.orange,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          customer['label'] as String,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              customer['name'] as String,
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              customer['email'] as String,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )).toList(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Are you creating a new customer account for this building?',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Yes, New Customer'),
+              ),
+            ],
+          ),
+        );
+        
+        if (shouldContinue != true) {
+          return; // User cancelled
+        }
+      }
+    } catch (e) {
+      print('Error checking building: $e');
+      // Continue anyway if check fails
+    }
+    
+    // Show building info popup
     showDialog(
       context: context,
       builder: (context) => BuildingInfoPopup(
@@ -453,15 +593,29 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
         // Get business name from attributes (fallback to building ID if not available)
         final businessName = buildingPolygon.businessName ?? buildingPolygon.buildingId;
         
+        // Get customer labels from cache
+        final customerLabels = _customerLabelsCache[buildingPolygon.buildingId];
+        
+        // Build label text: "buildingId" or "buildingId-R1,R2,B1"
+        final labelText = customerLabels != null && customerLabels.isNotEmpty
+            ? '$businessName-$customerLabels'
+            : businessName;
+        
         // Get polygon color for label background
         final polygonColor = _getPolygonColor(buildingPolygon.buildingId);
         
         return Marker(
           point: center,
-          width: 150,
-          height: 40,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          width: 120,  // Reduced from 150 to match smaller text
+          height: 32,  // Reduced from 40 to match smaller text
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,  // Consume tap events
+            onTap: () {
+              // Direct selection when tapping label - no confirmation dialog
+              _selectPolygonDirectly(buildingPolygon);
+            },
+            child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),  // Reduced padding
             decoration: BoxDecoration(
               color: polygonColor.withOpacity(0.9),
               borderRadius: BorderRadius.circular(4),
@@ -469,10 +623,10 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
             ),
             child: Center(
               child: Text(
-                businessName,
+                labelText,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 11,
+                  fontSize: 8.25,  // 25% reduction from 11
                   fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(
@@ -487,6 +641,7 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
                 maxLines: 2,
               ),
             ),
+          ),
           ),
         );
       } catch (e) {
@@ -573,7 +728,7 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
                   mapController: _mapController,
                   options: MapOptions(
                     initialCenter: _selectedLocation ?? const LatLng(6.5795, 3.3549),
-                    initialZoom: 17.0,
+                    initialZoom: 18.5,
                     onTap: _onMapTap,
                   ),
                   children: [

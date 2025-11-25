@@ -2,41 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../models/pickup_submission.dart';
 
 class ApiService {
-  // IMPORTANT: Change this to your server's IP address
-  static const String baseUrl = 'http://172.232.24.180:3003';
+  // Backend API base URL
+  static const String baseUrl = 'https://upwork.kowope.xyz';
   
   String? _token;
-  DateTime? _lastActivityTime;
-  static const Duration inactivityTimeout = Duration(minutes: 20);
 
   void setToken(String token) {
     _token = token;
-    _updateActivity();
-  }
-
-  void _updateActivity() {
-    _lastActivityTime = DateTime.now();
-  }
-
-  bool isInactive() {
-    if (_lastActivityTime == null) return false;
-    return DateTime.now().difference(_lastActivityTime!) > inactivityTimeout;
-  }
-
-  Future<void> _handleTokenRefresh(http.Response response) async {
-    final newToken = response.headers['x-new-token'];
-    if (newToken != null && newToken.isNotEmpty) {
-      print('[ApiService] Token refreshed by server');
-      _token = newToken;
-      // Save new token to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', newToken);
-    }
   }
 
   String? getToken() {
@@ -137,10 +113,15 @@ class ApiService {
         request.headers['Authorization'] = _token!;
       }
 
-      // Add form fields
-      request.fields['formId'] = pickup.formId;
-      request.fields['supervisorId'] = pickup.supervisorId;
+      // Add all form fields according to backend API contract
+      request.fields['customerName'] = pickup.formId; // Using formId as customerName for now
+      request.fields['customerPhone'] = ''; // TODO: Add to form
+      request.fields['customerEmail'] = ''; // TODO: Add to form  
+      request.fields['customerAddress'] = ''; // TODO: Add to form
       request.fields['customerType'] = pickup.customerType;
+      if (pickup.socioClass != null) {
+        request.fields['socioClass'] = pickup.socioClass!;
+      }
       request.fields['binType'] = pickup.binType;
       if (pickup.wheelieBinType != null) {
         request.fields['wheelieBinType'] = pickup.wheelieBinType!;
@@ -152,6 +133,19 @@ class ApiService {
         request.fields['incidentReport'] = pickup.incidentReport!;
       }
       request.fields['userId'] = pickup.userId;
+      if (pickup.latitude != null) {
+        request.fields['latitude'] = pickup.latitude.toString();
+      }
+      if (pickup.longitude != null) {
+        request.fields['longitude'] = pickup.longitude.toString();
+      }
+      request.fields['createdAt'] = pickup.createdAt;
+      if (pickup.companyId != null) {
+        request.fields['companyId'] = pickup.companyId!;
+      }
+      if (pickup.companyName != null) {
+        request.fields['companyName'] = pickup.companyName!;
+      }
 
       // Add photo files
       request.files.add(await http.MultipartFile.fromPath(
@@ -168,12 +162,6 @@ class ApiService {
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-
-      // Update activity timestamp
-      _updateActivity();
-
-      // Check for token refresh
-      await _handleTokenRefresh(response);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {
@@ -202,6 +190,54 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  // Check if a building has existing customers
+  Future<Map<String, dynamic>> checkBuilding(String buildingId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/v1/buildings/$buildingId/check'),
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to check building',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: $e',
+      };
+    }
+  }
+
+  // Get existing customers for a building
+  Future<Map<String, dynamic>> getBuildingCustomers(String buildingId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/v1/buildings/$buildingId/customers'),
+        headers: _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to get customers',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: $e',
+      };
     }
   }
 }
