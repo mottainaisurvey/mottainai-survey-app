@@ -10,8 +10,8 @@
 
 | Component | Version | Last Updated | Key Details |
 | :--- | :--- | :--- | :--- |
-| 📱 **Mobile App** | `v3.0.0` | Nov 24, 2025 | APK: `mottainai-survey-app-v3.0.0-all-fixes.apk` |
-| ☁️ **Backend** | *[Backend agent to fill]* | *[Backend agent to fill]* | API URL: `http://172.232.24.180:3003` |
+| 📱 **Mobile App** | `v3.1.0` | Nov 25, 2025 | APK: `mottainai-survey-app-v3.1.0.apk` |
+| ☁️ **Backend** | `v2.2.0` | Nov 25, 2025 | API URL: `https://upwork.kowope.xyz` |
 | 🗃️ **Database** | `v6` (SQLite) | Nov 24, 2025 | `customerLabels` column added to `cached_polygons` |
 
 ---
@@ -55,7 +55,10 @@ The mobile app sends a JSON object with the following structure and data types:
 **Key Field Details**:
 - `pickUpDate` is sent in the format: `'MMM dd, yyyy'` (e.g., "Nov 24, 2025").
 - `createdAt` is sent in ISO 8601 format.
-- `wheelieBinType`, `incidentReport`, `companyId`, and `companyName` are optional and may be `null`.
+- `socioClass` is required for residential customers (values: "low", "medium", "high").
+- `wheelieBinType`, `incidentReport`, `companyId`, `companyName`, and `socioClass` (for commercial) are optional and may be `null`.
+- Photos are sent as multipart/form-data files, not as paths.
+- Backend calculates pricing automatically - mobile app does NOT send price/amount.
 
 #### Backend Response (What the app expects)
 
@@ -70,14 +73,17 @@ This section tracks active issues and planned changes that may impact either sys
 
 ### Current Issues
 
-1.  **Zoho Sync Failure**: Pickups submitted from the mobile app are not appearing in Zoho. The backend agent needs to investigate the Zoho integration logic.
-2.  **Missing Data in Admin**: The admin panel is not displaying the `amount` and `pickup date` for new pickups. The backend agent needs to check the `/forms/submit` endpoint and the database schema.
-3.  **Missing Pickup Details Card**: The admin panel needs a feature to show a detailed pickup card when a record is clicked. The backend agent needs to create a new API endpoint and update the admin UI.
+**✅ All backend issues resolved as of Nov 25, 2025!**
+
+1.  ✅ **Zoho Sync** - Working with auto-refresh
+2.  ✅ **S3 Photo Storage** - Configured (AWS eu-west-1, bucket: mottainai-photos)
+3.  ✅ **Price Calculation** - Server-side with all 9 pricing tiers
+4.  ✅ **Pickup Details API** - `GET /api/pickups/:id` endpoint available
 
 ### Pending Changes
 
-- **📱 Mobile App**: No pending changes. Awaiting backend fixes for the issues listed above.
-- **☁️ Backend**: *[Backend agent to document any planned changes here, e.g., "Adding new field 'isPriority' to pickup form"]*.
+- **📱 Mobile App**: Need to add customer contact fields (customerName, customerPhone, customerEmail, customerAddress) to the pickup form.
+- **☁️ Backend**: No pending changes. All systems operational.
 
 ---
 
@@ -85,5 +91,6 @@ This section tracks active issues and planned changes that may impact either sys
 
 | Date | System | Agent | Change Description |
 | :--- | :--- | :--- | :--- |
-| Nov 24, 2025 | Mobile | Manus | **v3.0.0 Release**: Fixed zoom level, tap behavior, placeholder text, and read-only date field. |
-| | | | |
+| Nov 25, 2025 | Backend | Backend Agent | **v2.2.0 Release**: Zoho integration, S3 photo storage, server-side pricing, pickup details API |
+| Nov 25, 2025 | Mobile | Manus | **v3.1.0 Release**: Updated API URL to https://upwork.kowope.xyz, added socioClass field for residential customers, photo upload via multipart/form-data, removed loading blocker |
+| Nov 24, 2025 | Mobile | Manus | **v3.0.0 Release**: Fixed zoom level, tap behavior, placeholder text, and read-only date field |
