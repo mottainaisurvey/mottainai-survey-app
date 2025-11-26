@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -54,7 +54,8 @@ class DatabaseHelper {
       companyId $textNullable,
       companyName $textNullable,
       lotCode $textNullable,
-      lotName $textNullable
+      lotName $textNullable,
+      socioClass $textNullable
     )
     ''');
 
@@ -82,6 +83,17 @@ class DatabaseHelper {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 7) {
+      // Add socioClass column to pickups table
+      const textNullable = 'TEXT';
+      try {
+        await db.execute('ALTER TABLE pickups ADD COLUMN socioClass $textNullable');
+        print('Successfully added socioClass column to pickups table');
+      } catch (e) {
+        print('Error adding socioClass column: $e');
+      }
+    }
+    
     if (oldVersion < 6) {
       // Add customerLabels column to cached_polygons table
       const textNullable = 'TEXT';
