@@ -10,7 +10,7 @@
 
 | Component | Version | Last Updated | Key Details |
 | :--- | :--- | :--- | :--- |
-| 📱 **Mobile App** | `v3.1.0` | Nov 25, 2025 | APK: `mottainai-survey-app-v3.1.0.apk` |
+| 📱 **Mobile App** | `v3.1.1` | Nov 25, 2025 | APK: `mottainai-survey-app-v3.1.1.apk` |
 | ☁️ **Backend** | `v2.2.0` | Nov 25, 2025 | API URL: `https://upwork.kowope.xyz` |
 | 🗃️ **Database** | `v6` (SQLite) | Nov 24, 2025 | `customerLabels` column added to `cached_polygons` |
 
@@ -85,6 +85,10 @@ This section tracks active issues and planned changes that may impact either sys
 - **📱 Mobile App**: Need to add customer contact fields (customerName, customerPhone, customerEmail, customerAddress) to the pickup form.
 - **☁️ Backend**: No pending changes. All systems operational.
 
+### Recently Fixed
+
+- **✅ companyId in Submissions** (v3.1.1): Mobile app now sends user's companyId with every pickup submission, enabling the Company filter in admin dashboard.
+
 ---
 
 ## 4. Change Log
@@ -92,5 +96,6 @@ This section tracks active issues and planned changes that may impact either sys
 | Date | System | Agent | Change Description |
 | :--- | :--- | :--- | :--- |
 | Nov 25, 2025 | Backend | Backend Agent | **v2.2.0 Release**: Zoho integration, S3 photo storage, server-side pricing, pickup details API |
+| Nov 25, 2025 | Mobile | Manus | **v3.1.1 Release**: Fixed companyId submission (uses user's companyId), enables Company filter in admin dashboard |
 | Nov 25, 2025 | Mobile | Manus | **v3.1.0 Release**: Updated API URL to https://upwork.kowope.xyz, added socioClass field for residential customers, photo upload via multipart/form-data, removed loading blocker |
 | Nov 24, 2025 | Mobile | Manus | **v3.0.0 Release**: Fixed zoom level, tap behavior, placeholder text, and read-only date field |

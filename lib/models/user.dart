@@ -5,6 +5,8 @@ class User {
   final String phone;
   final String role;
   final bool monthlyBilling;
+  final String? companyId;
+  final String? companyName;
 
   User({
     required this.id,
@@ -13,6 +15,8 @@ class User {
     required this.phone,
     required this.role,
     required this.monthlyBilling,
+    this.companyId,
+    this.companyName,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class User {
       phone: json['phone'] as String,
       role: json['role'] as String,
       monthlyBilling: json['monthlyBilling'] as bool? ?? false,
+      companyId: json['companyId'] as String?,
+      companyName: json['companyName'] as String?,
     );
   }
 
@@ -34,6 +40,8 @@ class User {
       'phone': phone,
       'role': role,
       'monthlyBilling': monthlyBilling,
+      'companyId': companyId,
+      'companyName': companyName,
     };
   }
 }
