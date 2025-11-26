@@ -934,7 +934,7 @@ class _EnhancedLocationMapState extends State<EnhancedLocationMap> {
               width: hasCustomers ? 140 : 120, // Wider for customer labels
               height: 36, // Slightly taller for better visibility
               child: GestureDetector(
-                behavior: HitTestBehavior.opaque, // Consume tap events
+                behavior: HitTestBehavior.deferToChild, // Only capture taps on actual content
                 onTap: () {
                   // Different behavior for existing customers vs empty buildings
                   if (hasCustomers) {
