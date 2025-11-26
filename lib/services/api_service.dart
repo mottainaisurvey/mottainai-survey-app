@@ -169,9 +169,35 @@ class ApiService {
           'message': 'Pickup submitted successfully',
         };
       } else {
+        // Log the full error for debugging
+        print('[API] Pickup submission failed: ${response.statusCode}');
+        print('[API] Response body: ${response.body}');
+        
+        // Check if response is HTML (backend error page)
+        final isHtmlError = response.body.toLowerCase().contains('<html') || 
+                           response.body.toLowerCase().contains('<!doctype');
+        
+        String userFriendlyError;
+        if (isHtmlError) {
+          // Don't show HTML error pages to users
+          userFriendlyError = 'Server error (${response.statusCode}). Please try again or contact support.';
+        } else {
+          // Try to parse JSON error message
+          try {
+            final errorData = jsonDecode(response.body);
+            userFriendlyError = errorData['message'] ?? errorData['error'] ?? 'Unknown error';
+          } catch (e) {
+            // If not JSON, show the raw message (truncated)
+            final truncated = response.body.length > 100 
+                ? '${response.body.substring(0, 100)}...' 
+                : response.body;
+            userFriendlyError = truncated;
+          }
+        }
+        
         return {
           'success': false,
-          'error': 'Failed to submit pickup: ${response.body}',
+          'error': userFriendlyError,
         };
       }
     } catch (e) {
