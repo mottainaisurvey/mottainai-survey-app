@@ -10,7 +10,7 @@
 
 | Component | Version | Last Updated | Key Details |
 | :--- | :--- | :--- | :--- |
-| 📱 **Mobile App** | `v3.1.1` | Nov 25, 2025 | APK: `mottainai-survey-app-v3.1.1.apk` |
+| 📱 **Mobile App** | `v3.2.0` | Nov 26, 2025 | APK: `mottainai-survey-app-v3.2.0.apk` |
 | ☁️ **Backend** | `v2.2.0` | Nov 25, 2025 | API URL: `https://upwork.kowope.xyz` |
 | 🗃️ **Database** | `v6` (SQLite) | Nov 24, 2025 | `customerLabels` column added to `cached_polygons` |
 
@@ -87,7 +87,9 @@ This section tracks active issues and planned changes that may impact either sys
 
 ### Recently Fixed
 
-- **✅ companyId in Submissions** (v3.1.1): Mobile app now sends user's companyId with every pickup submission, enabling the Company filter in admin dashboard.
+- **✅ Label/Polygon Distinction** (v3.2.0): GREEN labels for existing customers, BLUE for empty buildings, distinct dialogs prevent confusion
+- **✅ Socio-Class Auto-Fill** (v3.2.0): Automatically populates from ArcGIS feature layer, eliminates manual errors
+- **✅ companyId in Submissions** (v3.1.1): Mobile app sends user's companyId with every pickup submission
 
 ---
 
@@ -95,6 +97,7 @@ This section tracks active issues and planned changes that may impact either sys
 
 | Date | System | Agent | Change Description |
 | :--- | :--- | :--- | :--- |
+| Nov 26, 2025 | Mobile | Manus | **v3.2.0 Release**: Clear label/polygon distinction (GREEN=existing, BLUE=empty), socio-class auto-fill from ArcGIS |
 | Nov 25, 2025 | Backend | Backend Agent | **v2.2.0 Release**: Zoho integration, S3 photo storage, server-side pricing, pickup details API |
 | Nov 25, 2025 | Mobile | Manus | **v3.1.1 Release**: Fixed companyId submission (uses user's companyId), enables Company filter in admin dashboard |
 | Nov 25, 2025 | Mobile | Manus | **v3.1.0 Release**: Updated API URL to https://upwork.kowope.xyz, added socioClass field for residential customers, photo upload via multipart/form-data, removed loading blocker |

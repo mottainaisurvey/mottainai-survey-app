@@ -111,4 +111,69 @@ class ArcGISService {
       return false;
     }
   }
+  
+  /// Get socio-economic class for a building from the feature layer
+  /// Returns: "low", "medium", "high", or null if not found
+  Future<String?> getSocioEconomicClass(String buildingId) async {
+    try {
+      final queryParams = {
+        'where': "building_id='$buildingId'",
+        'outFields': 'socio_economic_groups',
+        'returnGeometry': 'false',
+        'f': 'json',
+        'token': _apiKey,
+      };
+
+      final uri = Uri.parse('$_baseUrl/query').replace(queryParameters: queryParams);
+      
+      print('[ArcGIS] Querying socio-class for building: $buildingId');
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('ArcGIS query timeout');
+        },
+      );
+
+      if (response.statusCode != 200) {
+        print('[ArcGIS] Query failed with status: ${response.statusCode}');
+        return null;
+      }
+
+      final data = jsonDecode(response.body);
+      
+      if (data['error'] != null) {
+        print('[ArcGIS] API Error: ${data['error']['message']}');
+        return null;
+      }
+
+      final features = data['features'] as List<dynamic>? ?? [];
+      
+      if (features.isEmpty) {
+        print('[ArcGIS] No features found for buildingId: $buildingId');
+        return null;
+      }
+
+      // Extract socio-economic class from first feature
+      final attributes = features[0]['attributes'] as Map<String, dynamic>;
+      final socioClass = attributes['socio_economic_groups'] as String?;
+
+      // Validate and normalize the value
+      if (socioClass == null || socioClass.isEmpty) {
+        print('[ArcGIS] No socio-class value for building: $buildingId');
+        return null;
+      }
+      
+      final normalized = socioClass.toLowerCase().trim();
+      if (!['low', 'medium', 'high'].contains(normalized)) {
+        print('[ArcGIS] Invalid socio-class value: $socioClass');
+        return null;
+      }
+
+      print('[ArcGIS] Socio-class found: $normalized for building: $buildingId');
+      return normalized;
+    } catch (e) {
+      print('[ArcGIS] Error querying socio-class: $e');
+      return null;
+    }
+  }
 }

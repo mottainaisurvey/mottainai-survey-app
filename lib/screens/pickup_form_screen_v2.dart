@@ -13,6 +13,7 @@ import '../models/building_polygon.dart';
 import '../database/database_helper.dart';
 import '../services/company_service.dart';
 import '../services/lot_service.dart';
+import '../services/arcgis_service.dart';
 import '../widgets/enhanced_location_map.dart';
 
 class PickupFormScreenV2 extends StatefulWidget {
@@ -40,6 +41,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
   
   final CompanyService _companyService = CompanyService();
   final LotService _lotService = LotService();
+  final ArcGISService _arcgisService = ArcGISService();
   
   // Company & Lot Selection
   List<Company> _companies = [];
@@ -60,6 +62,8 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
   // Socio-Economic Class (for Residential customers only)
   String _socioClass = 'medium';
   final List<String> _socioClasses = ['low', 'medium', 'high'];
+  bool _isSocioClassAutoFilled = false;
+  bool _isLoadingSocioClass = false;
   
   // Building data from polygon
   String? _customerZone;
@@ -145,7 +149,7 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
     }
   }
 
-  void _handleBuildingSelected(BuildingPolygon polygon) {
+  void _handleBuildingSelected(BuildingPolygon polygon) async {
     setState(() {
       _selectedBuilding = polygon;
       _buildingIdController.text = polygon.buildingId;
@@ -156,6 +160,84 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
       _customerZone = polygon.zone;
       _socioEconomicGroup = polygon.socioEconomicGroups;
     });
+    
+    // Auto-populate socio-economic class from ArcGIS
+    await _loadSocioEconomicClass(polygon.buildingId);
+  }
+  
+  /// Load socio-economic class from ArcGIS feature layer
+  Future<void> _loadSocioEconomicClass(String buildingId) async {
+    // Only auto-fill for residential customers
+    if (_customerType != 'Residential') {
+      return;
+    }
+    
+    setState(() {
+      _isLoadingSocioClass = true;
+    });
+    
+    try {
+      final socioClassValue = await _arcgisService.getSocioEconomicClass(buildingId);
+      
+      if (socioClassValue != null && mounted) {
+        // Auto-fill successful
+        setState(() {
+          _socioClass = socioClassValue;
+          _isSocioClassAutoFilled = true;
+          _isLoadingSocioClass = false;
+        });
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Socio-class auto-filled: ${socioClassValue.toUpperCase()}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade700,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else if (mounted) {
+        // Auto-fill failed - user can select manually
+        setState(() {
+          _isSocioClassAutoFilled = false;
+          _isLoadingSocioClass = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text('Please select socio-class manually'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade700,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('[PickupForm] Error loading socio-class: $e');
+      if (mounted) {
+        setState(() {
+          _isSocioClassAutoFilled = false;
+          _isLoadingSocioClass = false;
+        });
+      }
+    }
   }
 
   Future<void> _pickImage(bool isFirst) async {
@@ -832,30 +914,90 @@ class _PickupFormScreenV2State extends State<PickupFormScreenV2> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Socio-Economic Class *',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      const Text(
+                        'Socio-Economic Class *',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (_isSocioClassAutoFilled) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade700,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white, size: 14),
+                              SizedBox(width: 4),
+                              Text(
+                                'Auto-filled',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: _socioClasses.map((socioClass) {
-                      return Expanded(
-                        child: RadioListTile<String>(
-                          title: Text(socioClass.toUpperCase()),
-                          value: socioClass,
-                          groupValue: _socioClass,
-                          onChanged: (value) {
-                            setState(() {
-                              _socioClass = value!;
-                            });
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                  if (_isLoadingSocioClass)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Loading socio-class from ArcGIS...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Row(
+                      children: _socioClasses.map((socioClass) {
+                        return Expanded(
+                          child: RadioListTile<String>(
+                            title: Text(socioClass.toUpperCase()),
+                            value: socioClass,
+                            groupValue: _socioClass,
+                            onChanged: (value) {
+                              setState(() {
+                                _socioClass = value!;
+                                _isSocioClassAutoFilled = false; // Mark as manually changed
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   const SizedBox(height: 16),
                 ],
               ),
