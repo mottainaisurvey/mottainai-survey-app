@@ -10,7 +10,7 @@
 
 | Component | Version | Last Updated | Key Details |
 | :--- | :--- | :--- | :--- |
-| 📱 **Mobile App** | `v3.2.2` | Nov 26, 2025 | APK: `mottainai-survey-app-v3.2.2.apk` |
+| 📱 **Mobile App** | `v3.2.3` | Nov 26, 2025 | APK: `mottainai-survey-app-v3.2.3.apk` |
 | ☁️ **Backend** | `v2.2.0` | Nov 25, 2025 | API URL: `https://upwork.kowope.xyz` |
 | 🗃️ **Database** | `v6` (SQLite) | Nov 24, 2025 | `customerLabels` column added to `cached_polygons` |
 
@@ -83,11 +83,12 @@ This section tracks active issues and planned changes that may impact either sys
 ### Pending Changes
 
 - **📱 Mobile App**: Need to add customer contact fields (customerName, customerPhone, customerEmail, customerAddress) to the pickup form.
-- **☁️ Backend**: 🔴 **CRITICAL** - SQL INSERT error in `/forms/submit` endpoint causing form submissions to fail. Debug mode must be disabled in production.
+- **☁️ Backend**: 🔴 **CRITICAL** - Pickup submissions are failing to sync. Backend is rejecting all submissions with unknown error. Backend logs need to be checked.
 
 ### Recently Fixed
 
-- **✅ Error Handling** (v3.2.2): Mobile app now handles backend HTML errors gracefully, shows user-friendly messages
+- **✅ Database Schema** (v3.2.3): Added socioClass column to local database, fixed blocking bug preventing ALL submissions
+- **✅ Error Handling** (v3.2.2): Mobile app now handles backend HTML errors gracefully
 - **✅ Tap Detection** (v3.2.1): Fixed polygon vs label tap detection (deferToChild behavior)
 - **✅ Label/Polygon Distinction** (v3.2.0): GREEN labels for existing customers, BLUE for empty buildings
 - **✅ Socio-Class Auto-Fill** (v3.2.0): Automatically populates from ArcGIS feature layer
@@ -99,6 +100,7 @@ This section tracks active issues and planned changes that may impact either sys
 
 | Date | System | Agent | Change Description |
 | :--- | :--- | :--- | :--- |
+| Nov 26, 2025 | Mobile | Manus | **v3.2.3 Release**: CRITICAL FIX - Added socioClass column to database, fixed blocking bug |
 | Nov 26, 2025 | Mobile | Manus | **v3.2.2 Release**: Improved error handling for backend HTML errors |
 | Nov 26, 2025 | Mobile | Manus | **v3.2.1 Release**: Fixed tap detection (deferToChild behavior) |
 | Nov 26, 2025 | Mobile | Manus | **v3.2.0 Release**: Clear label/polygon distinction, socio-class auto-fill (had broken tap detection) |
