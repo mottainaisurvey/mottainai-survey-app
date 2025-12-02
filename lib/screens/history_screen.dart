@@ -17,6 +17,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void initState() {
     super.initState();
     _loadHistory();
+    _setupSyncListener();
+  }
+
+  void _setupSyncListener() {
+    // Listen for sync completion and reload history
+    final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+    syncProvider.addListener(() {
+      if (!syncProvider.isSyncing && mounted) {
+        // Sync completed, reload history to show updated status
+        _loadHistory();
+      }
+    });
   }
 
   Future<void> _loadHistory() async {
